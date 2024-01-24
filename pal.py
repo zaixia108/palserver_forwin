@@ -1,17 +1,14 @@
 import ctypes
 import os.path
 import time
-
 from PIL import Image, ImageTk
-
 from th_pool import thread_control, stop
 import win32api
 import win32con
 import win32gui
 import tkinter as tk
 from tkinter import ttk, messagebox
-
-
+import shutil
 import ctypes
 import sys
 
@@ -31,7 +28,7 @@ def run_as_admin():
             sys.exit(1)
 
 
-run_as_admin()
+# run_as_admin()
 root = tk.Tk()
 submit = thread_control.submit
 RUN = None
@@ -68,6 +65,7 @@ def mem_clean():
     win32gui.SendMessage(button, win32con.WM_LBUTTONUP, win32con.MK_LBUTTON, 0)
     print('内存整理完成')
     os.system('taskkill /f /im memreduct.exe')
+    backup_save()
 
 
 def loop_clean():
@@ -101,6 +99,30 @@ def start_server():
     os.popen(r"start st\steamapps\common\PalServer\PalServer.exe port=8211")
     #开始loop清理内存
     RUN = submit(func=loop_clean, name='loop_clean', state=True, error_stop=False)
+
+
+def backup_save():
+    path = r"st\steamapps\common\PalServer\Pal\Saved\SaveGames"
+    if os.path.exists(path):
+        print('存档文件夹存在')
+    else:
+        print('存档文件夹不存在')
+        return None
+    name = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+    os.system(f"mkdir backup\{name}")
+    target = rf"backup\{name}"
+    max = 24
+    if os.path.exists(target):
+        pass
+    else:
+        os.mkdir(target)
+    # 如果文件夹内文件数量大于max，删除最早的文件
+    files = os.listdir('backup')
+    if len(files) > max:
+        files.sort(key=lambda fn: os.path.getmtime(rf"backup\{fn}"))
+        shutil.rmtree(rf"backup\{files[0]}")
+    # 复制文件
+    shutil.copytree(path, target + r"\SaveGames")
 
 
 def stop_server():
